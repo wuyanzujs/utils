@@ -4,19 +4,24 @@
  */
 
 /**
- * 平台类型枚举
+ * 平台类型常量
  */
-export const enum PlatformType {
-    H5 = 'H5',
-    MP_WEIXIN = 'MP-WEIXIN',
-    MP_ALIPAY = 'MP-ALIPAY',
-    MP_BAIDU = 'MP-BAIDU',
-    MP_TOUTIAO = 'MP-TOUTIAO',
-    MP_QQ = 'MP-QQ',
-    MP_KUAISHOU = 'MP-KUAISHOU',
-    APP = 'APP',
-    UNKNOWN = 'UNKNOWN',
-}
+export const PlatformType = {
+    H5: 'H5',
+    MP_WEIXIN: 'MP-WEIXIN',
+    MP_ALIPAY: 'MP-ALIPAY',
+    MP_BAIDU: 'MP-BAIDU',
+    MP_TOUTIAO: 'MP-TOUTIAO',
+    MP_QQ: 'MP-QQ',
+    MP_KUAISHOU: 'MP-KUAISHOU',
+    APP: 'APP',
+    UNKNOWN: 'UNKNOWN',
+} as const;
+
+/**
+ * 平台类型(类型定义)
+ */
+export type PlatformType = typeof PlatformType[keyof typeof PlatformType];
 
 /**
  * 平台常量(编译时确定)

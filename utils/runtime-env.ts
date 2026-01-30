@@ -21,26 +21,31 @@
 // ==================== 类型定义 ====================
 
 /**
- * 运行时环境类型
+ * 运行时环境类型常量
  */
-export const enum RuntimeEnv {
+export const RuntimeEnv = {
     /** 独立的浏览器环境 */
-    BROWSER = 'browser',
+    BROWSER: 'browser',
     /** 微信环境(可能是小程序或浏览器,需引入 SDK 后精确判断) */
-    WEIXIN = 'weixin',
+    WEIXIN: 'weixin',
     /** 支付宝环境(可能是小程序或浏览器,需引入 SDK 后精确判断) */
-    ALIPAY = 'alipay',
+    ALIPAY: 'alipay',
     /** 百度环境 */
-    BAIDU = 'baidu',
+    BAIDU: 'baidu',
     /** 头条环境 */
-    TOUTIAO = 'toutiao',
+    TOUTIAO: 'toutiao',
     /** QQ 环境 */
-    QQ = 'qq',
+    QQ: 'qq',
     /** 快手环境 */
-    KUAISHOU = 'kuaishou',
+    KUAISHOU: 'kuaishou',
     /** 未知环境 */
-    UNKNOWN = 'unknown',
-}
+    UNKNOWN: 'unknown',
+} as const;
+
+/**
+ * 运行时环境类型(类型定义)
+ */
+export type RuntimeEnv = typeof RuntimeEnv[keyof typeof RuntimeEnv];
 
 /**
  * 环境检测结果
