@@ -5,19 +5,25 @@
  * ```typescript
  * import router from '@/utils/router';
  * 
- * // 跳转
+ * // 内部页面跳转
  * router.navigateTo('/pages/detail/index', { id: 123 });
+ * 
+ * // 外部 H5 页面(在 webview 中打开)
+ * router.openExternalUrl({
+ *   url: 'https://example.com/h5',
+ *   mode: 'webview',
+ *   webviewPath: '/pages/webview/index'
+ * });
+ * 
+ * // 智能跳转(自动识别)
+ * router.smartNavigate('https://example.com/h5', {}, {
+ *   webviewPath: '/pages/webview/index'
+ * });
  * 
  * // 平台判断
  * if (router.IS_H5) {
  *   console.log('H5 环境');
  * }
- * 
- * // 路由守卫
- * router.addGuard(async (to, from) => {
- *   // 验证逻辑
- *   return true;
- * });
  * ```
  */
 
@@ -30,21 +36,14 @@ export {
     switchTab,
     navigateBack,
     navigateBackTo,
+    openExternalUrl,
+    smartNavigate,
+    isExternalUrl,
     type NavigateOptions,
     type NavigateBackOptions,
     type NavigateType,
+    type ExternalLinkOptions,
 } from './router';
-
-// 路由守卫
-export {
-    addGuard,
-    removeGuard,
-    clearGuards,
-    setLogEnabled,
-    getHistory,
-    clearHistory,
-    type RouteGuard,
-} from './guards';
 
 // 页面栈管理
 export {
@@ -66,16 +65,12 @@ export {
 
 // 默认导出
 import * as router from './router';
-import * as guards from './guards';
 import * as page from './page';
 import * as platformModule from './platform';
 
 export default {
     // 路由跳转
     ...router,
-
-    // 路由守卫
-    ...guards,
 
     // 页面栈
     ...page,

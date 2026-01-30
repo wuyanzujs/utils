@@ -3,10 +3,11 @@
 /**
  * 路由跳转工具函数
  * 提供统一的页面跳转 API,兼容小程序和 H5
+ * 支持内部页面跳转和外部 H5 页面跳转
  */
 
 import { getCurrentPath } from './page';
-import { log, executeGuards, recordHistory } from './internal';
+import { IS_H5 } from './platform';
 
 // ==================== 类型定义 ====================
 
@@ -43,7 +44,33 @@ export interface NavigateBackOptions {
     fail?: (error: any) => void;
 }
 
+/** 外部链接跳转参数 */
+export interface ExternalLinkOptions {
+    /** 外部 URL */
+    url: string;
+    /** 
+     * 跳转方式
+     * - webview: 在小程序 web-view 中打开(需要配置业务域名)
+     * - browser: 调用系统浏览器打开(仅 App 支持)
+     * - redirect: H5 环境下直接跳转
+     */
+    mode?: 'webview' | 'browser' | 'redirect';
+    /** web-view 页面路径(使用 webview 模式时必填) */
+    webviewPath?: string;
+    /** 成功回调 */
+    success?: () => void;
+    /** 失败回调 */
+    fail?: (error: any) => void;
+}
+
 // ==================== 工具函数 ====================
+
+/**
+ * 判断是否为外部链接
+ */
+export function isExternalUrl(url: string): boolean {
+    return /^https?:\/\//i.test(url);
+}
 
 /**
  * 构建完整的 URL(包含参数)
@@ -68,9 +95,9 @@ function buildUrl(url: string, params?: Record<string, any>): string {
 // ==================== 核心跳转函数 ====================
 
 /**
- * 统一跳转方法
+ * 统一跳转方法(仅用于内部页面)
  */
-export async function navigate(options: NavigateOptions): Promise<void> {
+export function navigate(options: NavigateOptions): Promise<void> {
     const {
         url,
         type = 'navigateTo',
@@ -84,24 +111,10 @@ export async function navigate(options: NavigateOptions): Promise<void> {
 
     // 构建完整 URL
     const fullUrl = buildUrl(url, params);
-    const currentPath = getCurrentPath();
-
-    // 执行路由守卫
-    const canNavigate = await executeGuards(url, currentPath, params);
-    if (!canNavigate) {
-        fail?.({ errMsg: '路由守卫拦截' });
-        complete?.();
-        return Promise.reject(new Error('路由守卫拦截'));
-    }
-
-    // 记录历史
-    recordHistory(fullUrl);
-    log(`跳转: ${type}`, { from: currentPath, to: fullUrl });
 
     // 使用 Promise 包装，确保在跳转完成后才 resolve
     return new Promise((resolve, reject) => {
         const handleSuccess = () => {
-            log(`跳转成功: ${fullUrl}`);
             success?.();
             resolve();
         };
@@ -174,6 +187,122 @@ export async function navigate(options: NavigateOptions): Promise<void> {
 }
 
 /**
+ * 打开外部链接
+ * 
+ * 使用示例:
+ * ```typescript
+ * // 方式1: 在 web-view 中打开(小程序)
+ * openExternalUrl({
+ *   url: 'https://example.com/h5-page',
+ *   mode: 'webview',
+ *   webviewPath: '/pages/webview/index'
+ * });
+ * 
+ * // 方式2: H5 环境直接跳转
+ * openExternalUrl({
+ *   url: 'https://example.com/h5-page',
+ *   mode: 'redirect'
+ * });
+ * ```
+ */
+export function openExternalUrl(options: ExternalLinkOptions): Promise<void> {
+    const { url, mode = 'webview', webviewPath, success, fail } = options;
+
+    return new Promise((resolve, reject) => {
+        try {
+            // H5 环境
+            if (IS_H5) {
+                if (mode === 'redirect') {
+                    window.location.href = url;
+                } else {
+                    // H5 默认在新窗口打开
+                    window.open(url, '_blank');
+                }
+                success?.();
+                resolve();
+                return;
+            }
+
+            // 小程序/App 环境
+            switch (mode) {
+                case 'webview':
+                    // 在 web-view 页面中打开
+                    if (!webviewPath) {
+                        const error = new Error('使用 webview 模式需要提供 webviewPath 参数');
+                        fail?.(error);
+                        reject(error);
+                        return;
+                    }
+                    uni.navigateTo({
+                        url: `${webviewPath}?url=${encodeURIComponent(url)}`,
+                        success: () => {
+                            success?.();
+                            resolve();
+                        },
+                        fail: (error) => {
+                            fail?.(error);
+                            reject(error);
+                        },
+                    });
+                    break;
+
+                case 'browser':
+                    // 调用系统浏览器打开(仅 App 支持)
+                    // @ts-ignore - plus 是 App 环境的全局对象
+                    if (typeof plus !== 'undefined' && plus.runtime) {
+                        // @ts-ignore
+                        plus.runtime.openURL(url);
+                        success?.();
+                        resolve();
+                    } else {
+                        const error = new Error('browser 模式仅在 App 环境下支持');
+                        fail?.(error);
+                        reject(error);
+                    }
+                    break;
+
+                default:
+                    const error = new Error(`未知的跳转模式: ${mode}`);
+                    fail?.(error);
+                    reject(error);
+            }
+        } catch (error) {
+            console.error('[Router] 打开外部链接失败:', error);
+            fail?.(error);
+            reject(error);
+        }
+    });
+}
+
+/**
+ * 智能跳转 - 自动识别内部/外部链接
+ * 
+ * 使用示例:
+ * ```typescript
+ * // 内部页面
+ * smartNavigate('/pages/detail/index', { id: 123 });
+ * 
+ * // 外部链接(自动识别并使用 webview 打开)
+ * smartNavigate('https://example.com/page', {}, {
+ *   webviewPath: '/pages/webview/index'
+ * });
+ * ```
+ */
+export function smartNavigate(
+    url: string,
+    params?: Record<string, any>,
+    externalOptions?: Omit<ExternalLinkOptions, 'url'>
+): Promise<void> {
+    if (isExternalUrl(url)) {
+        return openExternalUrl({
+            url: buildUrl(url, params),
+            ...externalOptions,
+        });
+    }
+    return navigateTo(url, params);
+}
+
+/**
  * 打开新页面(保留当前页面)
  */
 export function navigateTo(url: string, params?: Record<string, any>): Promise<void> {
@@ -208,12 +337,9 @@ export function navigateBack(options?: NavigateBackOptions): Promise<void> {
     return new Promise((resolve, reject) => {
         const { delta = 1, success, fail } = options || {};
 
-        log(`返回上一页: delta=${delta}`);
-
         uni.navigateBack({
             delta,
             success: () => {
-                log('返回成功');
                 success?.();
                 resolve();
             },
