@@ -89,56 +89,86 @@ export async function navigate(options: NavigateOptions): Promise<void> {
     if (!canNavigate) {
         fail?.({ errMsg: '路由守卫拦截' });
         complete?.();
-        return;
+        return Promise.reject(new Error('路由守卫拦截'));
     }
 
     // 记录历史
     recordHistory(fullUrl);
     log(`跳转: ${type}`, { from: currentPath, to: fullUrl });
 
-    // 构建 uni 跳转参数
-    const uniOptions: any = {
-        url: fullUrl,
-        animationType,
-        animationDuration,
-        success: () => {
+    // 使用 Promise 包装，确保在跳转完成后才 resolve
+    return new Promise((resolve, reject) => {
+        const handleSuccess = () => {
             log(`跳转成功: ${fullUrl}`);
             success?.();
-        },
-        fail: (error: any) => {
+            resolve();
+        };
+
+        const handleFail = (error: any) => {
             console.error(`[Router] 跳转失败: ${fullUrl}`, error);
             fail?.(error);
-        },
-        complete,
-    };
+            reject(error);
+        };
 
-    // 根据类型执行跳转
-    try {
-        switch (type) {
-            case 'navigateTo':
-                uni.navigateTo(uniOptions);
-                break;
-            case 'redirectTo':
-                uni.redirectTo(uniOptions);
-                break;
-            case 'reLaunch':
-                uni.reLaunch(uniOptions);
-                break;
-            case 'switchTab':
-                // switchTab 不支持传参
-                uni.switchTab({ url, success, fail, complete });
-                break;
-            case 'navigateBack':
-                uni.navigateBack({ delta: 1, success, fail, complete });
-                break;
-            default:
-                throw new Error(`未知的跳转类型: ${type}`);
+        const handleComplete = () => {
+            complete?.();
+        };
+
+        try {
+            switch (type) {
+                case 'navigateTo':
+                    uni.navigateTo({
+                        url: fullUrl,
+                        animationType,
+                        animationDuration,
+                        success: handleSuccess,
+                        fail: handleFail,
+                        complete: handleComplete,
+                    });
+                    break;
+                case 'redirectTo':
+                    uni.redirectTo({
+                        url: fullUrl,
+                        success: handleSuccess,
+                        fail: handleFail,
+                        complete: handleComplete,
+                    });
+                    break;
+                case 'reLaunch':
+                    uni.reLaunch({
+                        url: fullUrl,
+                        success: handleSuccess,
+                        fail: handleFail,
+                        complete: handleComplete,
+                    });
+                    break;
+                case 'switchTab':
+                    // switchTab 不支持传参
+                    uni.switchTab({
+                        url,
+                        success: handleSuccess,
+                        fail: handleFail,
+                        complete: handleComplete,
+                    });
+                    break;
+                case 'navigateBack':
+                    uni.navigateBack({
+                        delta: 1,
+                        success: handleSuccess,
+                        fail: handleFail,
+                        complete: handleComplete,
+                    });
+                    break;
+                default:
+                    const error = new Error(`未知的跳转类型: ${type}`);
+                    console.error('[Router]', error);
+                    reject(error);
+            }
+        } catch (error) {
+            console.error('[Router] 跳转异常:', error);
+            handleFail(error);
         }
-    } catch (error) {
-        console.error('[Router] 跳转异常:', error);
-        fail?.(error as any);
-        complete?.();
-    }
+    });
 }
 
 /**

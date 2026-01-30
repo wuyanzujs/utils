@@ -14,7 +14,7 @@ export function parseUrlParams(url: string): Record<string, any> {
     const params: Record<string, any> = {};
 
     queryString.split('&').forEach((pair) => {
-        const [key, value] = pair.split('=');
+        const [key, value = ''] = pair.split('=');
         if (key) {
             try {
                 params[key] = JSON.parse(decodeURIComponent(value));

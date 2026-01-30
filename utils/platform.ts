@@ -27,10 +27,10 @@ export type PlatformType = typeof PlatformType[keyof typeof PlatformType];
  * 平台常量(编译时确定)
  * 使用条件编译在打包时确定具体值,避免运行时判断
  */
-let CURRENT_PLATFORM: PlatformType;
-let IS_H5: boolean;
-let IS_MP: boolean;
-let IS_APP: boolean;
+let CURRENT_PLATFORM: PlatformType = PlatformType.UNKNOWN;
+let IS_H5: boolean = false;
+let IS_MP: boolean = false;
+let IS_APP: boolean = false;
 
 // #ifdef H5
 CURRENT_PLATFORM = PlatformType.H5;

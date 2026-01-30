@@ -68,7 +68,7 @@ export {
 import * as router from './router';
 import * as guards from './guards';
 import * as page from './page';
-import * as platform from './platform';
+import * as platformModule from './platform';
 
 export default {
     // 路由跳转
@@ -81,10 +81,10 @@ export default {
     ...page,
 
     // 平台判断
-    platform: platform.platform,
-    CURRENT_PLATFORM: platform.CURRENT_PLATFORM,
-    IS_H5: platform.IS_H5,
-    IS_MP: platform.IS_MP,
-    IS_APP: platform.IS_APP,
-    PlatformType: platform.PlatformType,
+    platform: platformModule.platform,
+    CURRENT_PLATFORM: platformModule.CURRENT_PLATFORM,
+    IS_H5: platformModule.IS_H5,
+    IS_MP: platformModule.IS_MP,
+    IS_APP: platformModule.IS_APP,
+    PlatformType: platformModule.PlatformType,
 };

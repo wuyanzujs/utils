@@ -151,19 +151,27 @@ export function detectEnv(): EnvDetectResult {
     }
 
     const ua = getUserAgent();
-    let env: RuntimeEnv = RuntimeEnv.UNKNOWN;
 
-    if (isWeixin()) {
+    // 一次性检测所有平台，避免重复调用 getUserAgent
+    const inWeixin = /micromessenger/i.test(ua);
+    const inAlipay = /alipay/i.test(ua);
+    const inBaidu = /baiduboxapp|swan/i.test(ua);
+    const inToutiao = /toutiao/i.test(ua);
+    const inQQ = /\sqq/i.test(ua);
+    const inKuaishou = /kuaishou/i.test(ua);
+
+    let env: RuntimeEnv;
+    if (inWeixin) {
         env = RuntimeEnv.WEIXIN;
-    } else if (isAlipay()) {
+    } else if (inAlipay) {
         env = RuntimeEnv.ALIPAY;
-    } else if (isBaidu()) {
+    } else if (inBaidu) {
         env = RuntimeEnv.BAIDU;
-    } else if (isToutiao()) {
+    } else if (inToutiao) {
         env = RuntimeEnv.TOUTIAO;
-    } else if (isQQ()) {
+    } else if (inQQ) {
         env = RuntimeEnv.QQ;
-    } else if (isKuaishou()) {
+    } else if (inKuaishou) {
         env = RuntimeEnv.KUAISHOU;
     } else {
         env = RuntimeEnv.BROWSER;
@@ -171,8 +179,8 @@ export function detectEnv(): EnvDetectResult {
 
     const result: EnvDetectResult = {
         env,
-        isInWeixin: isWeixin(),
-        isInAlipay: isAlipay(),
+        isInWeixin: inWeixin,
+        isInAlipay: inAlipay,
         isInBrowser: env === RuntimeEnv.BROWSER,
         userAgent: ua,
     };
@@ -231,6 +239,12 @@ export async function loadWeixinSDK(url = 'https://res.wx.qq.com/open/js/jweixin
 
 /**
  * 加载支付宝 SDK
+ * 
+ * 注意事项:
+ * - 默认 URL `https://appx/web-view.min.js` 是支付宝小程序内置协议地址
+ * - 此 URL 只在小程序 web-view 内有效
+ * - 在普通 H5 调试时会加载失败，需要传入其他可用的 SDK 地址
+ * - 支付宝官方 SDK 地址可能需要从支付宝开放平台获取
  */
 export async function loadAlipaySDK(url = 'https://appx/web-view.min.js'): Promise<void> {
     if (typeof (window as any).my !== 'undefined') {
