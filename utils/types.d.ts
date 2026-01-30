@@ -75,13 +75,9 @@ interface AlipayJSSDK {
 }
 
 /** 扩展 Window 接口 */
-declare global {
-    interface Window {
-        /** 微信 JSSDK */
-        wx?: WeixinJSSDK;
-        /** 支付宝 JSSDK */
-        my?: AlipayJSSDK;
-    }
+interface Window {
+    /** 微信 JSSDK */
+    wx?: WeixinJSSDK;
+    /** 支付宝 JSSDK */
+    my?: AlipayJSSDK;
 }
-
-export { };

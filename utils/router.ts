@@ -1,3 +1,5 @@
+/// <reference path="./types.d.ts" />
+
 /**
  * 路由跳转工具函数
  * 提供统一的页面跳转 API,兼容小程序和 H5
