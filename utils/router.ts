@@ -2,12 +2,11 @@
 
 /**
  * 路由跳转工具函数
- * 提供统一的页面跳转 API,兼容小程序和 H5
+ * 提供统一的页面跳转 API,专为 H5 和小程序设计
  * 支持内部页面跳转和外部 H5 页面跳转
  */
 
-import { getCurrentPath } from './page';
-import { IS_H5 } from './platform';
+import { IS_H5, IS_MP } from './platform';
 
 // ==================== 类型定义 ====================
 
@@ -22,10 +21,6 @@ export interface NavigateOptions {
     type?: NavigateType;
     /** 路由参数 */
     params?: Record<string, any>;
-    /** 动画类型(仅部分平台支持) */
-    animationType?: 'pop-in' | 'pop-out' | 'fade-in' | 'fade-out' | 'slide-in-right' | 'slide-out-right';
-    /** 动画时长(ms) */
-    animationDuration?: number;
     /** 成功回调 */
     success?: () => void;
     /** 失败回调 */
@@ -51,10 +46,9 @@ export interface ExternalLinkOptions {
     /** 
      * 跳转方式
      * - webview: 在小程序 web-view 中打开(需要配置业务域名)
-     * - browser: 调用系统浏览器打开(仅 App 支持)
      * - redirect: H5 环境下直接跳转
      */
-    mode?: 'webview' | 'browser' | 'redirect';
+    mode?: 'webview' | 'redirect';
     /** web-view 页面路径(使用 webview 模式时必填) */
     webviewPath?: string;
     /** 成功回调 */
@@ -102,8 +96,6 @@ export function navigate(options: NavigateOptions): Promise<void> {
         url,
         type = 'navigateTo',
         params,
-        animationType,
-        animationDuration,
         success,
         fail,
         complete,
@@ -134,8 +126,6 @@ export function navigate(options: NavigateOptions): Promise<void> {
                 case 'navigateTo':
                     uni.navigateTo({
                         url: fullUrl,
-                        animationType,
-                        animationDuration,
                         success: handleSuccess,
                         fail: handleFail,
                         complete: handleComplete,
@@ -223,48 +213,60 @@ export function openExternalUrl(options: ExternalLinkOptions): Promise<void> {
                 return;
             }
 
-            // 小程序/App 环境
-            switch (mode) {
-                case 'webview':
-                    // 在 web-view 页面中打开
-                    if (!webviewPath) {
-                        const error = new Error('使用 webview 模式需要提供 webviewPath 参数');
-                        fail?.(error);
-                        reject(error);
-                        return;
-                    }
-                    uni.navigateTo({
-                        url: `${webviewPath}?url=${encodeURIComponent(url)}`,
-                        success: () => {
-                            success?.();
-                            resolve();
-                        },
-                        fail: (error) => {
+            // 小程序环境
+            if (IS_MP) {
+                switch (mode) {
+                    case 'webview':
+                        // 在 web-view 页面中打开
+                        if (!webviewPath) {
+                            const error = new Error('使用 webview 模式需要提供 webviewPath 参数');
                             fail?.(error);
                             reject(error);
-                        },
-                    });
-                    break;
+                            return;
+                        }
+                        uni.navigateTo({
+                            url: `${webviewPath}?url=${encodeURIComponent(url)}`,
+                            success: () => {
+                                success?.();
+                                resolve();
+                            },
+                            fail: (error) => {
+                                fail?.(error);
+                                reject(error);
+                            },
+                        });
+                        break;
 
-                case 'browser':
-                    // 调用系统浏览器打开(仅 App 支持)
-                    // @ts-ignore - plus 是 App 环境的全局对象
-                    if (typeof plus !== 'undefined' && plus.runtime) {
-                        // @ts-ignore
-                        plus.runtime.openURL(url);
-                        success?.();
-                        resolve();
-                    } else {
-                        const error = new Error('browser 模式仅在 App 环境下支持');
+                    case 'redirect':
+                        // 小程序环境下 redirect 模式降级为 webview
+                        if (!webviewPath) {
+                            const error = new Error('使用 redirect 模式需要提供 webviewPath 参数');
+                            fail?.(error);
+                            reject(error);
+                            return;
+                        }
+                        uni.navigateTo({
+                            url: `${webviewPath}?url=${encodeURIComponent(url)}`,
+                            success: () => {
+                                success?.();
+                                resolve();
+                            },
+                            fail: (error) => {
+                                fail?.(error);
+                                reject(error);
+                            },
+                        });
+                        break;
+
+                    default:
+                        const error = new Error(`未知的跳转模式: ${mode}`);
                         fail?.(error);
                         reject(error);
-                    }
-                    break;
-
-                default:
-                    const error = new Error(`未知的跳转模式: ${mode}`);
-                    fail?.(error);
-                    reject(error);
+                }
+            } else {
+                const error = new Error('当前环境不支持外部链接跳转');
+                fail?.(error);
+                reject(error);
             }
         } catch (error) {
             console.error('[Router] 打开外部链接失败:', error);
@@ -355,9 +357,12 @@ export function navigateBack(options?: NavigateBackOptions): Promise<void> {
 /**
  * 返回到指定页面
  */
+// 注意: navigateBackTo 功能依赖 getCurrentPages API
+// 在某些小程序环境中可能需要额外配置
 export function navigateBackTo(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const pages = getCurrentPages();
+        // H5 和小程序环境都支持 getCurrentPages
+        const pages: any[] = getCurrentPages?.() || [];
         const targetIndex = pages.findIndex((page: any) => `/${page.route}` === url);
 
         if (targetIndex === -1) {
