@@ -63,6 +63,9 @@ export {
     PlatformType,
 } from './platform';
 
+// 存储工具
+export { storage } from './storage';
+
 // 默认导出
 import * as router from './router';
 import * as page from './page';

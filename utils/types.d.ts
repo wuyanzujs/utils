@@ -54,6 +54,68 @@ declare const uni: {
         fail?: (error: any) => void;
         complete?: () => void;
     }): void;
+
+    // ========== Storage 同步 API ==========
+
+    /** 同步获取存储值 */
+    getStorageSync(key: string): any;
+
+    /** 同步设置存储值 */
+    setStorageSync(key: string, data: any): void;
+
+    /** 同步删除存储值 */
+    removeStorageSync(key: string): void;
+
+    /** 同步清空存储 */
+    clearStorageSync(): void;
+
+    /** 同步获取存储信息 */
+    getStorageInfoSync(): {
+        keys: string[];
+        currentSize: number;
+        limitSize: number;
+    };
+
+    // ========== Storage 异步 API ==========
+
+    /** 异步获取存储值 */
+    getStorage(options: {
+        key: string;
+        success?: (res: { data: any }) => void;
+        fail?: (error: any) => void;
+        complete?: () => void;
+    }): void;
+
+    /** 异步设置存储值 */
+    setStorage(options: {
+        key: string;
+        data: any;
+        success?: () => void;
+        fail?: (error: any) => void;
+        complete?: () => void;
+    }): void;
+
+    /** 异步删除存储值 */
+    removeStorage(options: {
+        key: string;
+        success?: () => void;
+        fail?: (error: any) => void;
+        complete?: () => void;
+    }): void;
+
+    /** 异步清空存储 */
+    clearStorage(options?: {
+        success?: () => void;
+        fail?: (error: any) => void;
+        complete?: () => void;
+    }): void;
+
+    /** 异步获取存储信息 */
+    getStorageInfo(options: {
+        success?: (res: { keys: string[]; currentSize: number; limitSize: number }) => void;
+        fail?: (error: any) => void;
+        complete?: () => void;
+    }): void;
 };
 
 /** 微信 JSSDK 类型 */
