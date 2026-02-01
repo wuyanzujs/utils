@@ -7,14 +7,32 @@
  * 平台类型常量
  */
 export const PlatformType = {
+    // Web 端
     H5: 'H5',
-    MP_WEIXIN: 'MP-WEIXIN',
-    MP_ALIPAY: 'MP-ALIPAY',
-    MP_BAIDU: 'MP-BAIDU',
-    MP_TOUTIAO: 'MP-TOUTIAO',
-    MP_QQ: 'MP-QQ',
-    MP_KUAISHOU: 'MP-KUAISHOU',
-    APP: 'APP',
+
+    // 小程序端
+    MP_WEIXIN: 'MP-WEIXIN',       // 微信小程序
+    MP_ALIPAY: 'MP-ALIPAY',       // 支付宝小程序
+    MP_BAIDU: 'MP-BAIDU',         // 百度小程序
+    MP_TOUTIAO: 'MP-TOUTIAO',     // 字节跳动小程序(抖音/头条)
+    MP_QQ: 'MP-QQ',               // QQ 小程序
+    MP_KUAISHOU: 'MP-KUAISHOU',   // 快手小程序
+    MP_LARK: 'MP-LARK',           // 飞书小程序
+    MP_JD: 'MP-JD',               // 京东小程序
+    MP_360: 'MP-360',             // 360 小程序
+    MP_DINGTALK: 'MP-DINGTALK',   // 钉钉小程序
+
+    // 快应用
+    QUICKAPP_WEBVIEW: 'QUICKAPP-WEBVIEW',           // 快应用通用
+    QUICKAPP_WEBVIEW_UNION: 'QUICKAPP-WEBVIEW-UNION', // 快应用联盟
+    QUICKAPP_WEBVIEW_HUAWEI: 'QUICKAPP-WEBVIEW-HUAWEI', // 华为快应用
+
+    // App 端
+    APP: 'APP',                   // iOS/Android App
+    APP_IOS: 'APP-IOS',           // iOS App
+    APP_ANDROID: 'APP-ANDROID',   // Android App
+    APP_HARMONY: 'APP-HARMONY',   // 鸿蒙 App
+
     UNKNOWN: 'UNKNOWN',
 } as const;
 
